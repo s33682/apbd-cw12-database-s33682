@@ -13,4 +13,11 @@ public class PatientsController : ControllerBase
     {
         _dbService = dbService;
     }
+
+    [HttpGet]
+    public async Task<IActionResult> GetPatients(string? search)
+    {
+        var result = await _dbService.GetPatients(search);
+        return Ok(result);
+    }
 }

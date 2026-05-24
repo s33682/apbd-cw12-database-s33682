@@ -1,6 +1,8 @@
-﻿namespace DbFirst.Services;
+﻿using DbFirst.DTOs;
 
-public class IDbService
+namespace DbFirst.Services;
+
+public interface IDbService
 {
-    
+    public Task<IEnumerable<GetPatientDetailsDto>> GetPatients(string? search);
 }
