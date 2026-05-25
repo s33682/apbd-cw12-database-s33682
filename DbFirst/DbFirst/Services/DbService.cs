@@ -1,5 +1,7 @@
 ﻿using DbFirst.DTOs;
+using DbFirst.Exceptions;
 using DbFirst.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace DbFirst.Services;
@@ -78,5 +80,39 @@ public class DbService : IDbService
                 }
             }).ToList()
         }).ToListAsync();
+    }
+
+    public async Task AssignBedForPatient(string pesel, PostBedAssigmentDto data)
+    {
+        var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Pesel == pesel);
+
+        if (patient == null)
+        {
+            throw new PatientNotFoundException("Nie znaleziono pacjenta z podanym peselem!");
+        }
+
+        var options = await _context.Beds
+            .Where( x=> x.BedType.Name == data.BedType && x.Room.Ward.Name == data.Ward)
+            .Where(x=> x.BedAssignments.All(xba=>
+                (xba.To != null && xba.To < data.From) ||
+                (data.To != null && xba.From > data.To)
+                ))
+            .ToListAsync();
+
+        if (options.Count == 0)
+        {
+            throw new NoBedsAvailableException("Nie znaleziono dostępnych łóżek w tym terminie!");
+        }
+
+        var newBedAssigment = new BedAssignment
+        {
+            PatientPesel = pesel,
+            BedId = options[0].Id,
+            From =  data.From,
+            To = data.To
+        };
+
+        _context.BedAssignments.Add(newBedAssigment);
+        await _context.SaveChangesAsync();
     }
 }

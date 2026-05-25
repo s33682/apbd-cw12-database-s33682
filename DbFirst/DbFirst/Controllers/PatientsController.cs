@@ -1,4 +1,6 @@
-﻿using DbFirst.Services;
+﻿using DbFirst.DTOs;
+using DbFirst.Exceptions;
+using DbFirst.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DbFirst.Controllers;
@@ -19,5 +21,23 @@ public class PatientsController : ControllerBase
     {
         var result = await _dbService.GetPatients(search);
         return Ok(result);
+    }
+
+    [HttpPost]
+    [Route("{pesel}/bedassigments")]
+    public async Task<IActionResult> AssignBedForPatient(string pesel, PostBedAssigmentDto data)
+    {
+        try
+        {
+            await _dbService.AssignBedForPatient(pesel, data);
+            return NoContent();   
+        }catch(NoBedsAvailableException e)
+        {
+            return StatusCode(404, e.Message);
+        }
+        catch (PatientNotFoundException e)
+        {
+            return BadRequest(e.Message);
+        }
     }
 }
